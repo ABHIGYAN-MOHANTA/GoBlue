@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -15,7 +16,16 @@ type Server struct {
 }
 
 func NewServer() *http.Server {
-	port, _ := strconv.Atoi(os.Getenv("PORT"))
+	portStr := os.Getenv("PORT")
+	if portStr == "" {
+		portStr = "8000"
+	}
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		log.Fatalf("invalid PORT value %q: %v", portStr, err)
+	}
+
 	NewServer := &Server{
 		port: port,
 	}
