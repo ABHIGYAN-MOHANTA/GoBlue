@@ -6,8 +6,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
+
+	"GoBlue/proto/hello"
 
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var ctx = context.Background()
@@ -19,6 +24,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux.HandleFunc("/", s.HelloWorldHandler)
 	mux.HandleFunc("/health", s.HealthHandler)
 	mux.HandleFunc("/redis", s.RedisHandler)
+	mux.HandleFunc("/proto3", s.ProtoHandler)
 
 	// Wrap the mux with CORS middleware
 	return s.corsMiddleware(mux)
@@ -92,4 +98,22 @@ func (s *Server) RedisHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write(jsonResp); err != nil {
 		log.Printf("Failed to write response: %v", err)
 	}
+}
+
+func (s *Server) ProtoHandler(w http.ResponseWriter, r *http.Request) {
+	resp := &hello.HelloResponse{
+		Message:   "Hello from protobuf",
+		Pageviews: 1,
+		Time:      timestamppb.New(time.Now()),
+	}
+
+	data, err := proto.Marshal(resp)
+	if err != nil {
+		http.Error(w, "failed to marshal protobuf", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/x-protobuf")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
